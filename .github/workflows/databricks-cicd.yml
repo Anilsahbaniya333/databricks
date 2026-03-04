@@ -2,9 +2,9 @@ name: Databricks CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   deploy:
@@ -23,16 +23,29 @@ jobs:
         run: |
           pip install --upgrade databricks-cli
 
-      - name: Configure Databricks auth
+      # ✅ AUTH (Azure Service Principal) — replaces DATABRICKS_TOKEN
+      - name: Configure Databricks auth (Azure SP)
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
-          databricks configure --host "$DATABRICKS_HOST" --token <<< "$DATABRICKS_TOKEN"
+          databricks configure --aad-token --host "$DATABRICKS_HOST" << EOF
+          $AZURE_TENANT_ID
+          $AZURE_CLIENT_ID
+          $AZURE_CLIENT_SECRET
+          EOF
 
-      - name: Deploy notebooks (example)
+      # ✅ DEPLOY (simple) — import repo content to a Databricks workspace folder
+      # NOTE: This imports files as notebooks where possible.
+      - name: Deploy notebooks to Databricks workspace folder
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
-          databricks workspace import_dir ./notebooks /Shared/my_project/notebooks --overwrite
+          TARGET_PATH="/Shared/databricks-cicd"
+
+          # Create/update the folder by importing the whole repo
+          databricks workspace import_dir . "$TARGET_PATH" --overwrite
+
+          echo "Deployed repo to: $TARGET_PATH"
