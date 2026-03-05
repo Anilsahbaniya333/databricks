@@ -24,10 +24,11 @@ jobs:
       # ✅ AUTH with Azure Service Principal (NO PAT token)
       - name: Configure Databricks auth (Azure SP)
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+            DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+            DATABRICKS_AUTH_TYPE: azure-client-secret
+            DATABRICKS_AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            DATABRICKS_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+            DATABRICKS_AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}   
         run: |
           databricks configure --aad-token --host "$DATABRICKS_HOST" << EOF
           $AZURE_TENANT_ID
