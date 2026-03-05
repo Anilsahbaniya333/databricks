@@ -3,8 +3,6 @@ name: Databricks CI/CD
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
   deploy:
@@ -23,7 +21,7 @@ jobs:
         run: |
           pip install --upgrade databricks-cli
 
-      # ✅ AUTH (Azure Service Principal) — replaces DATABRICKS_TOKEN
+      # ✅ AUTH with Azure Service Principal (NO PAT token)
       - name: Configure Databricks auth (Azure SP)
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
@@ -37,15 +35,12 @@ jobs:
           $AZURE_CLIENT_SECRET
           EOF
 
-      # ✅ DEPLOY (simple) — import repo content to a Databricks workspace folder
-      # NOTE: This imports files as notebooks where possible.
-      - name: Deploy notebooks to Databricks workspace folder
+      # ✅ DEPLOY only notebooks folder to a "production" folder
+      - name: Deploy notebooks to PROD folder
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          PROD_PATH: /Shared/prod_my_project/notebooks
         run: |
-          TARGET_PATH="/Shared/databricks-cicd"
-
-          # Create/update the folder by importing the whole repo
-          databricks workspace import_dir . "$TARGET_PATH" --overwrite
-
-          echo "Deployed repo to: $TARGET_PATH"
+          databricks workspace mkdirs "$PROD_PATH"
+          databricks workspace import_dir "./notebooks" "$PROD_PATH" --overwrite
+          echo "✅ Deployed notebooks to: $PROD_PATH"
+          databricks workspace list "$PROD_PATH"
